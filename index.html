@@ -211,6 +211,11 @@ svg:not([width]){width:18px;height:18px}
 .seg button,.tab,.btn,select,input,button{font-family:'Manrope',system-ui,-apple-system,sans-serif}
 .mono,.badge,.cnt{white-space:nowrap}
 .badge{display:inline-block}
+
+.card,.tx,.crow,.alert,.hab,.cc,.pg,.cal span.on,.fab{animation:none!important}
+.on .chk,.chk.on{animation:none!important}
+input,select,textarea,.quick input{font-size:16px!important}
+body{overflow-anchor:none}
 </style>
 </head>
 <body>
@@ -311,12 +316,12 @@ function billsOf(ym){return S.bills.filter(b=>b.rep==='month'?ym>=b.start:ymOf(b
 function invoicesDue(ym){const r=[];S.cards.forEach(c=>cardMonths(c).forEach(m=>{const d=cardDue(c,m);if(ymOf(d)===ym){const v=cardInv(c,m);if(v>0)r.push({c,m,date:d,v,paid:invPaid(c,m)})}}));return r}
 function pending(ym){let t=0;const td=today();billsOf(ym).forEach(x=>{if(!x.paid)t+=x.b.amount});invoicesDue(ym).forEach(x=>{if(!x.paid)t+=x.v});return r2(t)}
 function spentCat(n,ym){let t=sumT(txMonth(ym).filter(x=>x.cat===n),'out');S.purch.filter(p=>p.cat===n).forEach(p=>{for(let k=0;k<p.n;k++)if(ymAdd(ymOf(p.date),k)===ym)t+=p.amount/p.n});return r2(t)}
-function forecast(){const ym=today().slice(0,7);const m=txMonth(ym);const outs=sumT(m,'out');const d=new Date().getDate(),dm=dpm(ym);return{proj:r2(outs/d*dm),outs}}
+function forecast(){const ym=today().slice(0,7),td=today(),d=new Date().getDate(),dm=dpm(ym);const m=txMonth(ym).filter(t=>t.type==='out'&&t.date<=td);const sm=l=>r2(l.reduce((a,t)=>a+t.amount,0));const outs=sm(m);const varOut=sm(m.filter(t=>!(t.ref&&/^[bc]/.test(t.ref))&&t.cat!=='Reserva'&&t.desc!=='Ajuste de saldo'));const fixed=r2(billsOf(ym).reduce((a,x)=>a+x.b.amount,0)+invoicesDue(ym).reduce((a,x)=>a+x.v,0));return{proj:r2(varOut/d*dm+fixed),outs}}
 const streak=h=>{let d=new Date(),n=0;if(!h.log.includes(iso(d)))d.setDate(d.getDate()-1);while(h.log.includes(iso(d))){n++;d.setDate(d.getDate()-1)}return n};
 const hasLaunch=()=>S.tx.length;
 
 /* ===== UI base ===== */
-function toast(msg,undoFn){const e=document.createElement('div');e.className='toast';e.innerHTML=`<span>${msg}</span>${undoFn?'<u>Desfazer</u>':''}`;document.body.appendChild(e);if(undoFn)$('u',e).onclick=()=>{undoFn();e.remove()};setTimeout(()=>{e.style.transition='opacity .4s';e.style.opacity=0;setTimeout(()=>e.remove(),400)},undoFn?5000:2200)}
+function toast(msg,undoFn){document.querySelectorAll('.toast').forEach(x=>x.remove());const e=document.createElement('div');e.className='toast';e.innerHTML=`<span>${msg}</span>${undoFn?'<u>Desfazer</u>':''}`;document.body.appendChild(e);if(undoFn)$('u',e).onclick=()=>{undoFn();e.remove()};setTimeout(()=>{e.style.transition='opacity .4s';e.style.opacity=0;setTimeout(()=>e.remove(),400)},undoFn?5000:2200)}
 function closeLayer(){const l=$('#layer');l.innerHTML=''}
 function mField(inp,init){inp.value=init!==undefined?fmtIn(init):'0,00';inp.addEventListener('input',()=>{let d=inp.value.replace(/\D/g,'').replace(/^0+/,'');while(d.length<3)d='0'+d;inp.value=d.slice(0,-2).replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+d.slice(-2)})}
 const fmtIn=n=>r2(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -655,10 +660,9 @@ V.raiox=()=>{
 let LK='';
 function render(){const y=scrollY;document.documentElement.dataset.theme=S.set.theme;
  const r=S.ui.route,ci=$('#ci')&&document.activeElement===$('#ci');
- const pk=r+S.ui.fin,mm=$('#main');mm.className=pk!==LK?'pg':'';LK=pk;mm.innerHTML=V[r]();$('#fab').style.display=r==='assist'?'none':'';$('#fab').innerHTML=LOGO(34);
- requestAnimationFrame(()=>{document.querySelectorAll('[data-w]').forEach(e=>e.style.width=e.dataset.w+'%');document.querySelectorAll('[data-h]').forEach(e=>e.style.height=Math.max(2,e.dataset.h)+'%');
-  document.querySelectorAll('[data-count]').forEach(e=>{if(e.dataset.done)return;e.dataset.done=1;const to=+e.dataset.count,t0=performance.now();const tick=n=>{const k=Math.min(1,(n-t0)/700),v=to*(1-Math.pow(1-k,3));e.textContent=money(v);if(k<1)requestAnimationFrame(tick);else e.textContent=money(to)};requestAnimationFrame(tick)});
-  if(r==='assist'){window.scrollTo(0,document.body.scrollHeight);if(ci)$('#ci').focus()}else scrollTo(0,y)});
+ const pk=r+S.ui.fin,mm=$('#main');mm.style.minHeight=mm.offsetHeight+'px';mm.className='';LK=pk;mm.innerHTML=V[r]();$('#fab').style.display=r==='assist'?'none':'';$('#fab').innerHTML=LOGO(34);
+ document.querySelectorAll('[data-w]').forEach(e=>{e.style.transition='none';e.style.width=e.dataset.w+'%'});document.querySelectorAll('[data-h]').forEach(e=>{e.style.transition='none';e.style.height=Math.max(2,e.dataset.h)+'%'});
+ if(r==='assist'){window.scrollTo(0,document.body.scrollHeight);if(ci)$('#ci').focus()}else scrollTo(0,y);mm.style.minHeight='';
  const sq=$('#sq');if(sq)sq.oninput=()=>{$('#txl').innerHTML=txList()};
  const nm=$('#nm');if(nm)nm.oninput=()=>{S.set.name=nm.value;save()};
  const dt=$('#dt');if(dt)dt.onchange=()=>{S.set.dailyTime=dt.value;save()};
@@ -683,7 +687,7 @@ const A={
  goto(d){S.ui.route='fin';S.ui.fin=d.k;save();render();scrollTo(0,0)},
  ftab(d){S.ui.fin=d.k;save();render()},
  mprev(){S.ui.month=ymAdd(S.ui.month,-1);save();render()},mnext(){S.ui.month=ymAdd(S.ui.month,1);save();render()},
- flt(d){S.ui.filter=d.k;save();render()},
+ flt(d){S.ui.filter=d.k;save();document.querySelectorAll('[data-a="flt"]').forEach(b=>{const on=b.dataset.k===d.k;b.className=on?'on '+(d.k==='in'?'in':''):'';b.style.cssText=on&&d.k==='todos'?'background:var(--cream);border-color:var(--cream);color:var(--ink)':''});const l=$('#txl');if(l)l.innerHTML=txList()},
  txadd(){txModal()},txedit(d){txModal(byId(S.tx,d.id))},cats(){catsModal()},fixbal(){fixBalance()},
  help(d){helpModal(d&&d.k)},
  qgo(){const i=$('#qi');if(!i||!i.value.trim())return;const v=i.value;i.value='';runAssist(v,true)},
@@ -755,6 +759,7 @@ let ICON='';
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 document.addEventListener('pointerdown',e=>{const t=e.target.closest('.btn,.ib,.tab,.hab,.tx,.sug,.go,.dr .it,.seg button,.crow');if(!t)return;const r=t.getBoundingClientRect(),d=Math.max(r.width,r.height),s=document.createElement('span');s.className='ripple';s.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;t.appendChild(s);setTimeout(()=>s.remove(),650)},{passive:true});
+new MutationObserver(()=>{document.body.style.overflow=$('#layer').children.length?'hidden':''}).observe($('#layer'),{childList:true});
 render();
 setTimeout(checkAlerts,1500);setInterval(checkAlerts,30000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkAlerts();}});
