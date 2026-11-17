@@ -1,12 +1,14 @@
 /* Nexo - service worker
-   - guarda o app no aparelho (abre offline e NÃO atualiza sozinho)
+   - guarda o app no aparelho (abre offline)
+   - ao abrir com internet, carrega a versão mais nova do index.html (seus dados NÃO são apagados)
    - mostra notificações (locais e push)
    Para atualizar o app: Configurações > Buscar atualização do app */
-const CACHE = 'nexo-v1';
+const CACHE = 'nexo-v4';
 const SHELL = ['./', './index.html', './sw.js'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}));
+  self.skipWaiting();
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).catch(() => {}));
 });
 
 self.addEventListener('activate', e => {
@@ -23,6 +25,17 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   const isFont = url.host.includes('fonts.googleapis.com') || url.host.includes('fonts.gstatic.com');
   if (url.origin !== location.origin && !isFont) return;
+
+  // página principal: tenta a versão nova ao abrir; sem internet, usa a guardada
+  if (req.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/sw.js')) {
+    e.respondWith(
+      fetch(req, { cache: 'no-cache' }).then(res => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {}); }
+        return res;
+      }).catch(() => caches.match(req, { ignoreSearch: true }).then(h => h || caches.match('./index.html')))
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(req, { ignoreSearch: true }).then(hit => {
