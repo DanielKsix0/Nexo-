@@ -227,7 +227,7 @@ body{overflow-anchor:none}
 'use strict';
 /* ===== utilidades ===== */
 const KEY='nexo_data_v2';
-const VERSION='v4';
+const VERSION='v6';
 const $=(s,e=document)=>e.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
 const pad=n=>String(n).padStart(2,'0');
@@ -242,7 +242,7 @@ const ymLabel=ym=>MES[+ym.slice(5)-1]+' de '+ym.slice(0,4);
 const dpm=ym=>new Date(+ym.slice(0,4),+ym.slice(5),0).getDate();
 const dueDate=(ym,d)=>ym+'-'+pad(Math.min(d,dpm(ym)));
 const r2=n=>Math.round(n*100)/100;
-const money=n=>(n<0?'-':'')+'R$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const money=n=>(n<0?'−':'')+'R$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const dayN=s=>+s.slice(8);
@@ -590,7 +590,7 @@ function txList(){const ym=S.ui.month,q=norm(($('#sq')||{value:''}).value||''),f
 V.fin=()=>{const f=S.ui.fin,ym=S.ui.month,tabs=[['resumo','Resumo','wallet'],['cartoes','Cartões','card'],['contas','Contas','receipt'],['limites','Limites','gauge'],['graficos','Gráficos','chart']];
  const th=hdr('Financeiro','Saldo, lançamentos, gráficos e o que você deve',`<div class="ib" data-a="help">${ic('help')}</div>`)+`<div class="tabs">${tabs.map(([k,t,i])=>`<button class="tab ${f===k?'on':''}" data-a="ftab" data-k="${k}">${ic(i)}${t}</button>`).join('')}</div>`;
  if(f==='resumo'){const m=txMonth(ym),ins=sumT(m,'in'),outs=sumT(m,'out'),pd=pending(ym),fc=forecast(),al=coach();
-  return th+`<div class="card" style="position:relative"><div class="accent"></div><div class="row sp"><span class="mut small">Saldo disponível hoje · BRL</span><a class="gr row" data-a="fixbal" style="font-weight:700;font-size:14px;gap:6px">${ic('scale')} Corrigir saldo</a></div><div class="big mono-n">${money(balance())}</div><div class="small mut" style="margin-bottom:6px">${money(sumT(S.tx.filter(t=>t.date<=today()),'in'))} recebidos − ${money(sumT(S.tx.filter(t=>t.date<=today()),'out'))} gastos e contas pagas</div>${lineSpark(ym)}<div class="grid2" style="margin-top:12px"><div class="mini"><span class="small mut"><span class="dot" style="background:var(--gr)"></span>Entradas do mês</span><b>${money(ins)}</b></div><div class="mini"><span class="small mut"><span class="dot" style="background:var(--rd)"></span>Saídas do mês</span><b>${money(outs)}</b></div></div><div class="mini" style="margin-top:10px"><span class="small mut"><span class="dot" style="background:var(--am)"></span>Contas a pagar</span><b class="am">${money(pd)}</b></div>${ym===today().slice(0,7)&&outs>0?`<div class="row" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);align-items:flex-start;gap:12px"><span class="mut">${ic('trend')}</span><span style="font-size:14px;line-height:1.45">No ritmo atual, as saídas de ${MES[+ym.slice(5)-1]} fecham em <b>${money(fc.proj)}</b> <span class="mut">(${money(fc.outs)} até hoje)</span>.</span></div>`:''}</div>`+
+  return th+`<div class="card" style="position:relative"><div class="accent"></div><div class="row sp"><span class="mut small">Saldo disponível hoje · BRL</span><a class="gr row" data-a="fixbal" style="font-weight:700;font-size:14px;gap:6px">${ic('scale')} Corrigir saldo</a></div><div class="big mono-n ${balance()<0?'rd':balance()>0?'gr':''}">${money(balance())}</div><div class="small mut" style="margin-bottom:6px">${money(sumT(S.tx.filter(t=>t.date<=today()),'in'))} recebidos − ${money(sumT(S.tx.filter(t=>t.date<=today()),'out'))} gastos e contas pagas</div>${lineSpark(ym)}<div class="grid2" style="margin-top:12px"><div class="mini"><span class="small mut"><span class="dot" style="background:var(--gr)"></span>Entradas do mês</span><b>${money(ins)}</b></div><div class="mini"><span class="small mut"><span class="dot" style="background:var(--rd)"></span>Saídas do mês</span><b>${money(outs)}</b></div></div><div class="mini" style="margin-top:10px"><span class="small mut"><span class="dot" style="background:var(--am)"></span>Contas a pagar</span><b class="am">${money(pd)}</b></div>${ym===today().slice(0,7)&&outs>0?`<div class="row" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);align-items:flex-start;gap:12px"><span class="mut">${ic('trend')}</span><span style="font-size:14px;line-height:1.45">No ritmo atual, as saídas de ${MES[+ym.slice(5)-1]} fecham em <b>${money(fc.proj)}</b> <span class="mut">(${money(fc.outs)} até hoje)</span>.</span></div>`:''}</div>`+
   quickBar('Ex.: gastei 45 no mercado ontem')+al.map(a=>`<div class="alert"><div class="i ${a[0]}">${ic(a[0]==='rd'?'alert':'bulb')}</div><div><b>${a[1]}</b><p>${a[2]}</p><a data-a="goto" data-k="${a[3]}">Ver ${a[3]}</a></div></div>`).join('')+
   (S.biz.sales.length?`<div class="alert" data-a="go" data-r="renda" style="cursor:pointer"><div class="i" style="background:var(--gr);color:#06210f">${ic('receipt')}</div><div><b>Renda extra · ${MES[+ym.slice(5)-1]}</b><p>Veja vendas, custos e o lucro real do seu negócio.</p></div></div>`:'')+
   `<div class="row" style="margin:8px 0 14px"><button class="btn" style="flex:1.6" data-a="txadd">${ic('plus')} Novo lançamento</button><button class="btn o" style="flex:1" data-a="cats">Categorias</button></div>`+nav(ym)+
@@ -694,9 +694,9 @@ const A={
  help(d){helpModal(d&&d.k)},
  qgo(){const i=$('#qi');if(!i||!i.value.trim())return;const v=i.value;i.value='';runAssist(v,true)},
  cardadd(){cardModal()},cardedit(d){cardModal(byId(S.cards,d.id))},purchadd(){purchModal()},purchedit(d){purchModal(byId(S.purch,d.id))},
- payinv(d){const c=byId(S.cards,d.id);confirmBox('Pagar fatura de '+money(cardInv(c,d.m))+'?',()=>payInvoice(c,d.m),'Pagar')},
+ payinv(d){const c=byId(S.cards,d.id),v=cardInv(c,d.m),bal=balance();modal(bal<v?'Saldo insuficiente':'Pagar fatura de '+money(v)+'?',bal<v?[{type:'info',text:'Seu saldo é '+money(bal)+'. Pagar '+money(v)+' vai deixar o saldo em '+money(r2(bal-v))+'. Lance suas receitas antes para o saldo ficar certo.'}]:[],()=>{payInvoice(c,d.m)},{label:bal<v?'Pagar mesmo assim':'Pagar'})},
  unpay(d){unpayKey(d.k)},
- billadd(){billModal()},billedit(d){billModal(byId(S.bills,d.id))},paybill(d){const x=billsOf(d.m).find(q=>q.b.id===d.id);payBill(x)},
+ billadd(){billModal()},billedit(d){billModal(byId(S.bills,d.id))},paybill(d){const x=billsOf(d.m).find(q=>q.b.id===d.id),bal=balance();if(bal<x.b.amount){modal('Saldo insuficiente',[{type:'info',text:'Seu saldo é '+money(bal)+'. Pagar '+money(x.b.amount)+' vai deixar o saldo em '+money(r2(bal-x.b.amount))+'. Se você já recebeu dinheiro, lance primeiro em Novo lançamento → Receita (ou use Corrigir saldo) e depois marque a conta como paga.'}],()=>{payBill(x)},{label:'Pagar mesmo assim'});return}payBill(x)},
  limadd(){limitModal()},limedit(d){limitModal(byId(S.limits,d.id))},
  evadd(){evModal(null)},evadd2(){evModal(null,S.ui.agDate)},evedit(d){evModal(byId(S.events,d.id))},
  agday(d){S.ui.agDate=d.d;save();render()},agprev(){S.ui.agDate=ymAdd(S.ui.agDate.slice(0,7),-1)+'-01';save();render()},agnext(){S.ui.agDate=ymAdd(S.ui.agDate.slice(0,7),1)+'-01';save();render()},
